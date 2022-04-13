@@ -1,0 +1,15 @@
+﻿14x13;7x11
+       ^      
+      / \     
+     /   \    
+    /     \   
+   /       \  
+  /|       |\ 
+   |       |  
+   |  ___  |  
+   |  | |  |  
+   |__|1|__|  
+              
+              
+vvvvvvvvvvvvvv
+MapChange,v,OverWorld.map, ,false,SameTile;MapChange,1,OverWorld.map, ,false,SameTile
