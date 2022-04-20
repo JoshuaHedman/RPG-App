@@ -71,6 +71,7 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <None Include="Combat\CombatSprites\Slime.spr" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -94,8 +95,9 @@
     <None Include="Map\Maps\House.map" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Combat\CombatSprites\Human.txt" />
-    <Content Include="Combat\CombatSprites\Player.txt" />
+    <None Include="Combat\CombatSprites\Human.spr" />
+    <None Include="Combat\CombatSprites\Player.spr" />
+    <Content Include="Map\Maps\OverWorldEnemies.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

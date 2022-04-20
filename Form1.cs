@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using RPG_App.Map;
 using RPG_App.Combat;
 
 
@@ -19,8 +20,16 @@ namespace RPG_App
 		MapEngine mapEngine;
 		CombatEngine combatEngine;
 		enum active{ Map, Combat}
-		active Active = active.Combat;
-		
+		private active Active = active.Map;
+		bool switchEngine = false;
+		public void switchActiveMode()
+		{
+			if (Active == active.Map)
+				Active = active.Combat;
+			else if (Active == active.Combat)
+				Active = active.Map;
+			switchEngine = true;
+		}
 		public RPG_Form()
 		{
 			InitializeComponent();
@@ -29,6 +38,8 @@ namespace RPG_App
 			//currenMap = new Map("OverWorld.map", 13, 13);
 			combatEngine = new CombatEngine();
 			mapEngine = new MapEngine();
+			mapEngine.hookUpMap(this, combatEngine);
+			combatEngine.hookUpCombat(this, mapEngine);
 			OutputTxt.ForeColor = Color.Black;
 			OutputTxt.Text = mapEngine.MapOutput();
 			//OutputTxt.Text = currenMap.MapString();
@@ -42,7 +53,7 @@ namespace RPG_App
 
 		private void RPG_Form_KeyPress(object sender, KeyPressEventArgs e)
 		{
-			if(true)
+			if (!switchEngine)
 			//if (e.KeyChar >= 48 && e.KeyChar <= 57)//0x30
 			{
 				//MessageBox.Show("Form.KeyPress: '" + e.KeyChar.ToString() + "' pressed.");
@@ -54,6 +65,8 @@ namespace RPG_App
 					case 's':
 					case 'd':
 					case ' ':
+					case 'q':
+					case 'f':
 						//currenMap.MovePlayer(e.KeyChar);
 						//OutputTxt.Text = currenMap.MapString();
 						if (Active == active.Map)
@@ -72,12 +85,23 @@ namespace RPG_App
 					case '8':
 						break;
 					case '9':
-						
+
 						break;
 					default:
 						//MessageBox.Show("Form.KeyPress: '" + e.KeyChar.ToString() + "' consumed.");
 						e.Handled = true;
 						break;
+				}
+			} else
+			{
+				switchEngine = false;
+				if (Active == active.Combat)
+				{
+					OutputTxt.Text = combatEngine.CombatOutput("");
+
+				}else if (Active == active.Map)
+				{
+					OutputTxt.Text = mapEngine.MapOutput();
 				}
 			}
 		}

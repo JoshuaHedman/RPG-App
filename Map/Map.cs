@@ -5,25 +5,42 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 using System.Windows.Forms;
+using RPG_App.Combat;
 
-namespace RPG_App
+namespace RPG_App.Map
 {
 	public class MapEngine
 	{
 		private Dictionary<string, Map> MapList = new Dictionary<string, Map>();
 		private Map currentMap;
+		private Random rand = new Random();
+		private CombatEngine combatEngine;
+		private RPG_Form form;
+		
 
 		public enum TileAction{Move, MoveIfHasItem, ToMap, ToMapWCoords,ToMapDirection, none}
 		public MapEngine()
 		{
-			currentMap = new Map("OverWorld.map");
+			currentMap = new Map("OverWorld.map", "OverWorldEnemies.txt");
 			MapList.Add("OverWorld.map", currentMap);
 
+		}
+
+		public void hookUpMap(RPG_Form form, CombatEngine combat)
+		{
+			this.form = form;
+			this.combatEngine = combat;
 		}
 
 		public string Mapstep(char c)
 		{
 			MapInput(c);
+			if (rand.Next(100) < 20)    // encounter chance, currently 20%
+			{
+				RandEncounter();
+			}
+			else if (c == 'f')
+				RandEncounter();
 			return MapOutput();
 		}
 		public void MapInput(char c)
@@ -64,6 +81,11 @@ namespace RPG_App
 			return currentMap.MapString();
 		}
 
+		public void RandEncounter()
+		{
+			combatEngine.EncounterStart(currentMap.enemyList[rand.Next(currentMap.enemyList.Count)]);
+			form.switchActiveMode();
+		}
 
 		private class Map
 		{
@@ -74,6 +96,7 @@ namespace RPG_App
 			public int _pYPos;
 			//private List<Tile> tileSet = new List<Tile>;
 			public Dictionary<char, Tile> tileSet = new Dictionary<char, Tile>();
+			public List<Combat.Character> enemyList = new List<Character>();
 
 			public int pXPos
 			{
@@ -96,9 +119,7 @@ namespace RPG_App
 				get { return tileSet.ContainsKey(grid[pXPos, pYPos]); }
 			}
 
-			
-
-			public Map(string fileName)
+			public Map(string fileName, string enemyFileName = null)
 			{
 
 				string[] lines = File.ReadAllLines(System.Environment.CurrentDirectory + "\\..\\..\\Map\\Maps\\" + fileName);
@@ -124,7 +145,7 @@ namespace RPG_App
 					{
 						Type t = Type.GetType("RPG_App.MapEngine" + tileParams[0]);
 						//Tile tiletest = (Tile)Activator.CreateInstance(Type.GetType("RPG_App."+ tileParams[0]), (tileParams[2]), tileParams[3]);
-						Tile tiletest = (Tile)Activator.CreateInstance(Type.GetType("RPG_App.MapEngine+" + tileParams[0]), args: tileParams.Skip(2).ToArray()); //1st is tile name,  2nd is tile in mapfile, then params
+						Tile tiletest = (Tile)Activator.CreateInstance(Type.GetType("RPG_App.Map.MapEngine+" + tileParams[0]), args: tileParams.Skip(2).ToArray()); //1st is tile name,  2nd is tile in mapfile, then params
 						this.tileSet.Add(Convert.ToChar(tileParams[1]), tiletest);
 					}
 				}
@@ -142,6 +163,38 @@ namespace RPG_App
 					}
 					//Console.Write("\n");
 				}
+
+				//Read enemy list
+				if(enemyFileName != null)
+				{
+					string[] eListLines = File.ReadAllLines(System.Environment.CurrentDirectory + "\\..\\..\\Map\\Maps\\" + enemyFileName);
+					for(int i = 0; i < eListLines.Length; i++)
+					{
+						string[] enemyData = eListLines[i].Split(',');
+						List<Character.Attack.DamageType> weakness = new List<Character.Attack.DamageType>();
+						if (enemyData[12] == "fire")
+						{
+							weakness.Add(Character.Attack.DamageType.Fire);
+						}else if (enemyData[12] == "none")
+						{
+							weakness.Add(Character.Attack.DamageType.Ice);
+						}else if (enemyData[12] == "none")
+						{
+							weakness.Add(Character.Attack.DamageType.Electric);
+						}else if (enemyData[12] == "none")
+						{
+							weakness.Add(Character.Attack.DamageType.Physical);
+						}else
+						{
+							weakness.Add(Character.Attack.DamageType.none);
+						}
+						//Slime,Slime.spr,1,50,50,0,10,10,5,5,10,10,fire  ; Example of data
+						enemyList.Add(new Character(enemyData[0], enemyData[1], Convert.ToInt32(enemyData[2]), Convert.ToInt32(enemyData[3]), Convert.ToInt32(enemyData[4])
+						, Convert.ToInt32(enemyData[5]), Convert.ToInt32(enemyData[6]), Convert.ToInt32(enemyData[7]), Convert.ToInt32(enemyData[8]),
+						Convert.ToInt32(enemyData[9]), Convert.ToInt32(enemyData[10]), Convert.ToInt32(enemyData[11]), weakness.ToArray()));
+					}
+				}
+
 			}
 
 
@@ -216,6 +269,9 @@ namespace RPG_App
 							moved = true;
 						}
 						break;
+				
+						
+						
 				}
 				return moved;
 			}

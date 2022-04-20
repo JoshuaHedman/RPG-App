@@ -1,0 +1,2 @@
+﻿Bandit,Human.spr,1,100,100,50,10,10,10,10,10,10,none
+Slime,Slime.spr,1,50,50,0,10,10,5,5,10,10,fire
