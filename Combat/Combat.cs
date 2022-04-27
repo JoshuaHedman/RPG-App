@@ -13,13 +13,15 @@ namespace RPG_App.Combat
 		public Player player = new Player();
 		public Character Enemy = new Character("Bad Dude", "Human.spr", 1, 0, 100, 50, 10, 10, 50, 10, 10, 10);
 
-		enum Menu { ChooseAction, ChooseAbility };
+		enum Menu { ChooseAction, ChooseAbility, ChooseItem };
 		Menu CurrentMenu = Menu.ChooseAction;
 		enum Action { Attack, Abilities, Items, Flee };
 		Action ChooseAction = Action.Attack;
 		private int _abilityMenuScroll;
 		enum MenuSpot { TopLeft, TopRight, BotLeft, BotRight}
 		MenuSpot AbilitySpot = MenuSpot.TopLeft;
+		private int _itemMenuScroll;
+		MenuSpot ItemSpot = MenuSpot.TopLeft;
 		enum CombatState{ won, lost, going}
 		CombatState combatState = CombatState.going;
 		readonly Random rand = new Random();
@@ -32,6 +34,15 @@ namespace RPG_App.Combat
 			set{	if ((value <= (player.Attacks.Count-4) / 2) && value >= 0)
 					_abilityMenuScroll = value;
 				}
+		}
+		private int itemMenuScroll
+		{
+			get { return _itemMenuScroll; }
+			set
+			{
+				if ((value <= (player.inventory.items.Count - 2) / 2) && value >= 0)
+					_itemMenuScroll = value;
+			}
 		}
 		public void hookUpCombat(RPG_Form form, MapEngine map)
 		{
@@ -99,7 +110,7 @@ namespace RPG_App.Combat
 					else if (ChooseAction == Action.Abilities)
 						CurrentMenu = Menu.ChooseAbility;
 					else if (ChooseAction == Action.Items)
-						msg = "Not Implemented yet";
+						CurrentMenu = Menu.ChooseItem;
 					else if (ChooseAction == Action.Flee)
 						msg = "Not Implemented yet";
 				} 
@@ -182,13 +193,89 @@ namespace RPG_App.Combat
 					}
 				}
 			}
+			else if (CurrentMenu == Menu.ChooseItem)
+			{
+				if (c == 'w')
+				{
+					if (ItemSpot == MenuSpot.BotLeft)
+					{
+						ItemSpot = MenuSpot.TopLeft;
+					}
+					else if (ItemSpot == MenuSpot.BotRight)
+					{
+						ItemSpot = MenuSpot.TopRight;
+					}
+					else if (ItemSpot == MenuSpot.TopLeft)
+					{
+						itemMenuScroll--;
+					}
+					else if (ItemSpot == MenuSpot.TopRight)
+					{
+						itemMenuScroll--;
+					}
+				}
+				else if (c == 's')
+				{
+					if (ItemSpot == MenuSpot.TopLeft)
+					{
+						ItemSpot = MenuSpot.BotLeft;
+					}
+					else if (ItemSpot == MenuSpot.TopRight)
+					{
+						ItemSpot = MenuSpot.BotRight;
+					}
+					else if (ItemSpot == MenuSpot.BotLeft)
+					{
+						itemMenuScroll++;
+					}
+					else if (ItemSpot == MenuSpot.BotRight)
+					{
+						itemMenuScroll++;
+					}
+
+				}
+				else if (c == 'a')
+				{
+					if (ItemSpot == MenuSpot.TopRight)
+					{
+						ItemSpot = MenuSpot.TopLeft;
+					}
+					else if (ItemSpot == MenuSpot.BotRight)
+					{
+						ItemSpot = MenuSpot.BotLeft;
+					}
+				}
+				else if (c == 'd')
+				{
+					if (ItemSpot == MenuSpot.TopLeft)
+					{
+						ItemSpot = MenuSpot.TopRight;
+					}
+					else if (ItemSpot == MenuSpot.BotLeft)
+					{
+						ItemSpot = MenuSpot.BotRight;
+					}
+				}
+				else if (c == ' ')
+				{
+					//Use Item
+					if (player.inventory.items.Count > (int)ItemSpot + itemMenuScroll * 2)
+					{
+						//msg = Enemy.DamageCalc(player.Attacks[1 + (int)AbilitySpot + abilityMenuScroll * 2], player, Enemy);
+						msg = combatRound(player.inventory.items[(int)ItemSpot + itemMenuScroll * 2]);
+					}
+					
+				}
+				else if (c == 'q')
+				{
+					if (CurrentMenu != Menu.ChooseAction)
+					{
+						CurrentMenu = Menu.ChooseAction;
+					}
+				}
+			}
 				return msg;	//return message to print
 		}
-		//public void testfight()
-		//{
-
-		//	//Character enemy = new Character("Bad", "Human.txt");
-		//}
 		
 		public void EncounterStart(Character enemy)
 		{
@@ -197,6 +284,8 @@ namespace RPG_App.Combat
 			ChooseAction = Action.Attack;
 			AbilitySpot = MenuSpot.TopLeft;
 			abilityMenuScroll = 0;
+			ItemSpot = MenuSpot.TopLeft;
+			itemMenuScroll = 0;
 			combatState = CombatState.going;
 		}
 		private string combatRound(Player.Attack pAttack)
@@ -218,9 +307,10 @@ namespace RPG_App.Combat
 				if(Enemy.BaseStats.CurrentHP <= 0)
 				{
 					combatState = CombatState.won;
-					return msg + "\r\nplayer won";
+					return msg + "\r\n" + combatWon();
 				}
 				//enemy turn
+				enemyTurn();
 				if (player.BaseStats.CurrentHP <= 0)
 				{
 					combatState = CombatState.lost;
@@ -230,6 +320,7 @@ namespace RPG_App.Combat
 			else
 			{
 				//enemy turn
+				enemyTurn();
 				if (player.BaseStats.CurrentHP <= 0)
 				{
 					combatState = CombatState.lost;
@@ -239,10 +330,74 @@ namespace RPG_App.Combat
 				if (Enemy.BaseStats.CurrentHP <= 0)
 				{
 					combatState = CombatState.won;
-					return msg + "\r\nplayer won";
+					return msg + "\r\n" + combatWon();
 				}
 			}
 			return msg;
+		}
+
+		private string combatRound(Player.Inventory.Item item)
+		{
+			string msg = "";
+			bool pFirst = true; //default player goes first
+			if (player.BaseStats.Agi < Enemy.BaseStats.Agi) //if enemy is faster they go first
+				pFirst = false;
+			else if (player.BaseStats.Agi == Enemy.BaseStats.Agi)
+			{
+				if (rand.Next(1) == 2)  //if player and enemy are same speed coinflip on order
+				{
+					pFirst = false;
+				}
+			}
+			if (pFirst)
+			{
+				msg = player.inventory.useItem(item);
+				if (Enemy.BaseStats.CurrentHP <= 0)
+				{
+					combatState = CombatState.won;
+					return msg + "\r\n" + combatWon();
+				}
+				//enemy turn
+				enemyTurn();
+				if (player.BaseStats.CurrentHP <= 0)
+				{
+					combatState = CombatState.lost;
+					return msg + "\r\nplayer lost";
+				}
+			}
+			else
+			{
+				//enemy turn
+				enemyTurn();
+				if (player.BaseStats.CurrentHP <= 0)
+				{
+					combatState = CombatState.lost;
+					return msg + "\r\nplayer lost";
+				}
+				msg = player.inventory.useItem(item);
+				if (Enemy.BaseStats.CurrentHP <= 0)
+				{
+					combatState = CombatState.won;
+					return msg + "\r\n" + combatWon();
+				}
+			}
+			return msg;
+		}
+
+		private string combatWon()
+		{
+			string msg = "Player won";
+			player.BaseStats.XP += Enemy.BaseStats.XP;
+			//drop items
+			//drop gold
+
+
+			return msg;
+		}
+		private string enemyTurn()
+		{
+			
+			return player.DamageCalc(Enemy.Attacks[rand.Next(Enemy.Attacks.Count)], Enemy, player);
 		}
 		public string CombatOutput(string msg)
 		{
@@ -285,7 +440,7 @@ namespace RPG_App.Combat
 			printedScreen += "|   You                       |\r\n";	// V V Print Player HP and MP V V
 			printedScreen += "|" + string.Concat(Enumerable.Repeat(" ", 4 - Convert.ToString(player.BaseStats.CurrentHP).Length));
 			printedScreen += player.BaseStats.CurrentHP + "/" + player.BaseStats.HPMax;
-			printedScreen += string.Concat(Enumerable.Repeat(" ", 24 - Convert.ToString(player.BaseStats.CurrentHP).Length)) + "|\r\n";
+			printedScreen += string.Concat(Enumerable.Repeat(" ", 24 - Convert.ToString(player.BaseStats.HPMax).Length)) + "|\r\n";
 			printedScreen += "|" + string.Concat(Enumerable.Repeat(" ", 4 - Convert.ToString(player.BaseStats.CurrentMP).Length));
 			printedScreen += player.BaseStats.CurrentMP + "/" + player.BaseStats.MPMax;
 			printedScreen += string.Concat(Enumerable.Repeat(" ", 24 - Convert.ToString(player.BaseStats.MPMax).Length)) + "|\r\n";
@@ -349,6 +504,42 @@ namespace RPG_App.Combat
 				else
 				printedScreen += "| |  " + Ability3 + string.Concat(Enumerable.Repeat(" ", 11 - Ability3.Length))
 							  + Ability4 + string.Concat(Enumerable.Repeat(" ", 11 - Ability4.Length)) + " | |\r\n";
+				printedScreen += "| |_________________________| |\r\n";
+			}else if(CurrentMenu == Menu.ChooseItem)
+			{
+				string Item1 = "No items", Item2 = "", Item3 = "", Item4 = "";
+				if(player.inventory.items.Count >= 1 + itemMenuScroll * 2)
+				Item1 = player.inventory.items[itemMenuScroll * 2].itemName;
+				if (player.inventory.items.Count>= 2 + itemMenuScroll * 2)
+				{
+					Item2 = player.inventory.items[1 + 2 * itemMenuScroll].itemName;
+					if (player.inventory.items.Count>= 3 + itemMenuScroll * 2)
+					{
+						Item3 = player.inventory.items[2 + 2 * itemMenuScroll].itemName;
+						if (player.inventory.items.Count >= 4 + itemMenuScroll * 2)
+							Item4 = player.inventory.items[3 + 2 * itemMenuScroll].itemName;
+					}
+				}
+				printedScreen += "| ___________________________ |\r\n";
+				printedScreen += "| |          Items          | |\r\n";
+				if (ItemSpot == MenuSpot.TopLeft)
+					printedScreen += "| | >" + Item1 + string.Concat(Enumerable.Repeat(" ", 11 - Item1.Length))
+							  + Item2 + string.Concat(Enumerable.Repeat(" ", 11 - Item2.Length)) + " | |\r\n";
+				else if (ItemSpot == MenuSpot.TopRight)
+					printedScreen += "| |  " + Item1 + string.Concat(Enumerable.Repeat(" ", 10 - Item1.Length))
+							  + ">" + Item2 + string.Concat(Enumerable.Repeat(" ", 11 - Item2.Length)) + " | |\r\n";
+				else
+					printedScreen += "| |  " + Item1 + string.Concat(Enumerable.Repeat(" ", 11 - Item1.Length))
+							  + Item2 + string.Concat(Enumerable.Repeat(" ", 11 - Item2.Length)) + " | |\r\n";
+				if (ItemSpot == MenuSpot.BotLeft)
+					printedScreen += "| | >" + Item3 + string.Concat(Enumerable.Repeat(" ", 11 - Item3.Length))
+								  + Item4 + string.Concat(Enumerable.Repeat(" ", 11 - Item4.Length)) + " | |\r\n";
+				else if (ItemSpot == MenuSpot.BotRight)
+					printedScreen += "| |  " + Item3 + string.Concat(Enumerable.Repeat(" ", 10 - Item3.Length))
+								  + ">" + Item4 + string.Concat(Enumerable.Repeat(" ", 11 - Item4.Length)) + " | |\r\n";
+				else
+					printedScreen += "| |  " + Item3 + string.Concat(Enumerable.Repeat(" ", 11 - Item3.Length))
+								  + Item4 + string.Concat(Enumerable.Repeat(" ", 11 - Item4.Length)) + " | |\r\n";
 				printedScreen += "| |_________________________| |\r\n";
 			}
 
@@ -454,6 +645,7 @@ namespace RPG_App.Combat
 		public StatBlock BaseStats;
 		Attack.DamageType[] Weakness;
 		readonly Random rand = new Random();
+		
 		public string Name
 		{
 			get { return _name; }
@@ -471,6 +663,7 @@ namespace RPG_App.Combat
 			}
 			else
 				this.Weakness = new Attack.DamageType[] { Attack.DamageType.none };
+			Attacks.Add(new Attack("Basic", 50, Attack.DamageType.Physical, 80));
 		}
 
 		public string DamageCalc(Attack attack, Character user, Character target)
@@ -521,25 +714,81 @@ namespace RPG_App.Combat
 		{
 			string Name = name;
 		}*/
+		public Inventory inventory = new Inventory();
+
 		public Player() : base("player", "Player.spr", 1, 0, 1000, 50, 50, 10, 10, 10, 10, 10)
 		{
-			Attacks.Add(new Attack("Basic", 50, Attack.DamageType.Physical, 80));
+			
 			Attacks.Add(new Attack("Firebolt", 50, Attack.DamageType.Fire, 80, 10));
 			Attacks.Add(new Attack("Heal Opp", -100, Attack.DamageType.Ice, 100));
 			Attacks.Add(new Attack("Heal", 30, Attack.DamageType.Heal, 100, 10));
-			//Attacks.Add(new Attack("Filler3", 0, Attack.DamageType.Physical, 100));
-			//Attacks.Add(new Attack("Filler4", 0, Attack.DamageType.Physical, 100));
+			Attacks.Add(new Attack("Filler3", 0, Attack.DamageType.Physical, 100));
+			Attacks.Add(new Attack("Filler4", 0, Attack.DamageType.Physical, 100));
 			//Attacks.Add(new Attack("Filler5", 0, Attack.DamageType.Physical, 100));
 			//Attacks.Add(new Attack("Filler6", 0, Attack.DamageType.Physical, 100));
 			//Attacks.Add(new Attack("Filler7", 0, Attack.DamageType.Physical, 100));
 			//Attacks.Add(new Attack("Filler8", 0, Attack.DamageType.Physical, 100));
-
+			inventory.addItem(new Inventory.PotionHP(this));
+			inventory.addItem(new Inventory.Item("fItem1"));
+			inventory.addItem(new Inventory.Item("fItem2"));
+			inventory.addItem(new Inventory.Item("fItem3"));
+			inventory.addItem(new Inventory.Item("fItem4"));
+			//inventory.addItem(new Inventory.Item("fItem5"));
 		}
 
-		class Inventory
+		public class Inventory
 		{
-		
-
+			public class Item
+			{
+				public string itemName;
+				public Item (string itemName = "NameMissing")
+				{
+					this.itemName = itemName;
+				}
+				virtual public string Use()
+				{
+					
+					return "Item Unimplemented";
+				}
+			}
+			public class PotionHP : Item
+			{
+				int healAmount = 50;
+				Player player;
+				//Attack heal
+				public PotionHP(Player player)
+				{
+					itemName = "HP Potion";
+					this.player = player;
+				}
+				
+				public override string Use()
+				{
+					int amountToHeal = player.BaseStats.HPMax - player.BaseStats.CurrentHP;
+					player.BaseStats.CurrentHP += healAmount;
+					return "Player healed " + amountToHeal + "HP";
+				}
+			}
+			public List<Item> items = new List<Item>();
+			public List<int> itemCount = new List<int>();
+			
+			public void addItem(Item item)
+			{
+				if(items.Any(x=>x.itemName == item.itemName))
+				{
+					itemCount[items.IndexOf(item)]++;
+				}else if(items.Count <= 100)
+				{
+					items.Add(item);
+					itemCount.Add(1);
+				}else {
+					//option to drop other items
+				}
+			}
+			public string useItem(Item item)
+			{
+				return item.Use();
+			}
 
 		}
 	}

@@ -83,8 +83,11 @@ namespace RPG_App.Map
 
 		public void RandEncounter()
 		{
-			combatEngine.EncounterStart(currentMap.enemyList[rand.Next(currentMap.enemyList.Count)]);
-			form.switchActiveMode();
+			if (currentMap.enemyList.Count > 0)
+			{
+				combatEngine.EncounterStart(currentMap.enemyList[rand.Next(currentMap.enemyList.Count)]);
+				form.switchActiveMode();
+			}
 		}
 
 		private class Map
