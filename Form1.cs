@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using RPG_App.Map;
 using RPG_App.Combat;
-
+using RPG_App.Map.Tiles;
 
 namespace RPG_App
 {
@@ -35,14 +35,13 @@ namespace RPG_App
 			InitializeComponent();
 			//Console.OutputEncoding = System.Text.Encoding.UTF8;
 			this.KeyPress += new KeyPressEventHandler(RPG_Form_KeyPress);
-			//currenMap = new Map("OverWorld.map", 13, 13);
 			combatEngine = new CombatEngine();
 			mapEngine = new MapEngine();
 			mapEngine.hookUpMap(this, combatEngine);
 			combatEngine.hookUpCombat(this, mapEngine);
 			OutputTxt.ForeColor = Color.Black;
-			OutputTxt.Text = mapEngine.MapOutput();
-			//OutputTxt.Text = currenMap.MapString();
+			OutputTxt.Text = "WASD to move. In combat, spacebar to select and Q to go back. DEBUG F forces encouter\r\n" + mapEngine.MapOutput();
+			//OutputTxt.Text += "\r\nWASD to move. In combat, spacebar to select and Q to go back
 		}
 
 		private void RPG_Form_Load(object sender, EventArgs e)
@@ -56,9 +55,8 @@ namespace RPG_App
 			if (!switchEngine)
 			//if (e.KeyChar >= 48 && e.KeyChar <= 57)//0x30
 			{
-				//MessageBox.Show("Form.KeyPress: '" + e.KeyChar.ToString() + "' pressed.");
 
-				switch (e.KeyChar)//(int)e.KeyChar)
+				switch (e.KeyChar)
 				{
 					case 'w':
 					case 'a':
@@ -67,8 +65,6 @@ namespace RPG_App
 					case ' ':
 					case 'q':
 					case 'f':
-						//currenMap.MovePlayer(e.KeyChar);
-						//OutputTxt.Text = currenMap.MapString();
 						if (Active == active.Map)
 							OutputTxt.Text = mapEngine.Mapstep(e.KeyChar);
 						else if (Active == active.Combat)
@@ -102,6 +98,7 @@ namespace RPG_App
 				}else if (Active == active.Map)
 				{
 					OutputTxt.Text = mapEngine.MapOutput();
+					
 				}
 			}
 		}

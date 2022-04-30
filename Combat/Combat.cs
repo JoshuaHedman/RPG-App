@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 using RPG_App.Map;
+using RPG_App.Combat.Characters;
 
 namespace RPG_App.Combat
 {
@@ -22,11 +23,12 @@ namespace RPG_App.Combat
 		MenuSpot AbilitySpot = MenuSpot.TopLeft;
 		private int _itemMenuScroll;
 		MenuSpot ItemSpot = MenuSpot.TopLeft;
-		enum CombatState{ won, lost, going}
+		enum CombatState{ won, lost, ran,going}
 		CombatState combatState = CombatState.going;
 		readonly Random rand = new Random();
 		RPG_Form form;
 		MapEngine mapEngine;
+		int fleeAttempts;
 
 		private int abilityMenuScroll
 		{
@@ -105,14 +107,22 @@ namespace RPG_App.Combat
 				} else if (c == ' ')
 				{
 					if (ChooseAction == Action.Attack)
+					{
 						msg = combatRound(player.Attacks.Find(x => x.Name == "Basic"));
-					//msg = Enemy.DamageCalc(player.Attacks.Find(x => x.Name == "Basic"), player, Enemy);
+					}
 					else if (ChooseAction == Action.Abilities)
+					{
 						CurrentMenu = Menu.ChooseAbility;
+					}
 					else if (ChooseAction == Action.Items)
+					{
 						CurrentMenu = Menu.ChooseItem;
+					}
 					else if (ChooseAction == Action.Flee)
-						msg = "Not Implemented yet";
+					{
+						fleeAttempts++;
+						msg = combatRoundFlee();
+					}
 				} 
 			}
 			else if (CurrentMenu == Menu.ChooseAbility)
@@ -181,7 +191,6 @@ namespace RPG_App.Combat
 				{
 					if (player.Attacks.Count > 1 + (int)AbilitySpot + abilityMenuScroll * 2)
 					{
-						//msg = Enemy.DamageCalc(player.Attacks[1 + (int)AbilitySpot + abilityMenuScroll * 2], player, Enemy);
 						msg = combatRound(player.Attacks[1 + (int)AbilitySpot + abilityMenuScroll * 2]);
 					}
 				}
@@ -261,7 +270,6 @@ namespace RPG_App.Combat
 					//Use Item
 					if (player.inventory.items.Count > (int)ItemSpot + itemMenuScroll * 2)
 					{
-						//msg = Enemy.DamageCalc(player.Attacks[1 + (int)AbilitySpot + abilityMenuScroll * 2], player, Enemy);
 						msg = combatRound(player.inventory.items[(int)ItemSpot + itemMenuScroll * 2]);
 					}
 					
@@ -281,22 +289,28 @@ namespace RPG_App.Combat
 		{
 			Enemy = enemy;
 			Enemy.BaseStats.CurrentHP = Enemy.BaseStats.HPMax;
+			CurrentMenu = Menu.ChooseAction;
 			ChooseAction = Action.Attack;
 			AbilitySpot = MenuSpot.TopLeft;
 			abilityMenuScroll = 0;
 			ItemSpot = MenuSpot.TopLeft;
 			itemMenuScroll = 0;
 			combatState = CombatState.going;
+			fleeAttempts = 0;
 		}
 		private string combatRound(Player.Attack pAttack)
 		{
 			string msg = "";
+			if(pAttack.MPCost > player.BaseStats.CurrentMP)
+			{
+				return "Not enough MP";
+			}
 			bool pFirst = true;	//default player goes first
 			if (player.BaseStats.Agi < Enemy.BaseStats.Agi)	//if enemy is faster they go first
 				pFirst = false;
 			else if( player.BaseStats.Agi == Enemy.BaseStats.Agi)
 			{
-				if(rand.Next(1) == 2)	//if player and enemy are same speed coinflip on order
+				if(rand.Next(2) == 1)	//if player and enemy are same speed coinflip on order
 				{
 					pFirst = false;
 				}
@@ -333,6 +347,7 @@ namespace RPG_App.Combat
 					return msg + "\r\n" + combatWon();
 				}
 			}
+			fleeAttempts = 0;
 			return msg;
 		}
 
@@ -381,9 +396,24 @@ namespace RPG_App.Combat
 					return msg + "\r\n" + combatWon();
 				}
 			}
+			fleeAttempts = 0;
 			return msg;
 		}
+		private string combatRoundFlee()
+		{
+			string msg = "";
+			float speedRelation = (float)player.BaseStats.Agi / (float)Enemy.BaseStats.Agi;
+			if (speedRelation * 30 * fleeAttempts > rand.Next(100))
+			{
+				combatState = CombatState.ran;
+				msg = "Successfully ran away";
+			}else{
+				enemyTurn();
+				msg = "Failled to escape";
+			}
 
+			return msg;
+		}
 		private string combatWon()
 		{
 			string msg = "Player won";
@@ -418,9 +448,8 @@ namespace RPG_App.Combat
 				"  |  Items       Flee      |");
 				"  |________________________|"
 				*/
-			//Console.Clear();
 			printedScreen = string.Concat(Enumerable.Repeat("_", screenWidth)) + "\r\n";
-			//printedScreen += ("|");
+			
 			//Stuff inside box
 			for (int x = 0; x < player.CombatSprite.Length; x++)    //Print Enemy
 			{
@@ -431,11 +460,11 @@ namespace RPG_App.Combat
 			}
 			printedScreen += "|" + String.Concat(Enumerable.Repeat(" ", 22 - (Enemy.Name.Length/2)));
 			printedScreen += Enemy.Name;
-			printedScreen += String.Concat(Enumerable.Repeat(" ", 7 - ((Enemy.Name.Length+1)/2))) + "|\r\n";//Print Enemy Name then V V HP
+			printedScreen += String.Concat(Enumerable.Repeat(" ", 7 - ((Enemy.Name.Length+1)/2))) + "|\r\n";//Print Enemy Name then HP
 			printedScreen += "|" + string.Concat(Enumerable.Repeat(" ", 22 - Convert.ToString(Enemy.BaseStats.CurrentHP).Length));
 			printedScreen += Enemy.BaseStats.CurrentHP + "/" + Enemy.BaseStats.HPMax;
 			printedScreen += string.Concat(Enumerable.Repeat(" ", 6 - Convert.ToString(Enemy.BaseStats.HPMax).Length)) + "|\r\n";
-			//|                    Enemy    |\r\n"
+			
 			printedScreen += "|                             |\r\n";
 			printedScreen += "|   You                       |\r\n";	// V V Print Player HP and MP V V
 			printedScreen += "|" + string.Concat(Enumerable.Repeat(" ", 4 - Convert.ToString(player.BaseStats.CurrentHP).Length));
@@ -543,256 +572,16 @@ namespace RPG_App.Combat
 				printedScreen += "| |_________________________| |\r\n";
 			}
 
-
-				//
-			//printedScreen += (" |\r\n");
-			
 			printedScreen += string.Concat(Enumerable.Repeat("‾", screenWidth));
 			printedScreen += "\r\n" + msg;
 			printedScreen = printedScreen.Replace("\0", string.Empty);
 			printedScreen += "";
 			return printedScreen;
-			//return "combat";
 		}
 	}
 
-	public class Character
-	{
-		public class StatBlock
-		{
-			public int Lvl;
-			public int XP;
-			private int _HPMax;
-			private int _CurrentHP;
-			private int _MPMax;
-			private int _CurrentMP;
-			public int Atk;
-			public int MAtk;
-			public int Def;
-			public int MDef;
-			public int Dex;
-			public int Agi;
-
-			public int HPMax{ get { return _HPMax; } }
-			public int MPMax{ get { return _MPMax; } }
-			public int CurrentHP
-			{
-				get{ return _CurrentHP; }
-				set
-				{
-					if (value <= _HPMax)
-						_CurrentHP = value;
-					else
-						_CurrentHP = _HPMax;
-				}
-			}
-			public int CurrentMP
-			{
-				get { return _CurrentMP; }
-				set
-				{
-					if (value <= _MPMax)
-						_CurrentMP = value;
-					else
-						_CurrentMP = _HPMax;
-				}
-			}
-
-			public StatBlock(int lvl, int xp, int hp, int mp, int atk, int matk, int def, int mdef, int dex, int agi)
-			{
-				Lvl = lvl;
-				XP = xp;
-				_HPMax = hp;
-				_CurrentHP = hp;
-				_MPMax = mp;
-				_CurrentMP = mp;
-				Atk = atk;
-				MAtk = matk;
-				Def = def;
-				MDef = mdef;
-				Dex = dex;
-				Agi = agi;
-			}
-
-
-		}
-		public class Attack
-		{
-			public enum DamageType { Physical, Fire, Ice, Electric, Heal, none};
-			readonly string _name;
-			readonly int _dmg;
-			readonly DamageType _type;
-			readonly int _accuracy;
-			readonly int _MPCost;
-			public string Name{ get { return _name; } }
-			public int Dmg{ get { return _dmg; } }
-			public DamageType Type { get { return _type; } }
-			public int Accuracy{ get { return _accuracy; } }
-			public int MPCost{ get { return _MPCost; } }
-			public Attack(string name, int dmg, DamageType type, int accuracy, int MPCost = 0)
-			{
-				_name = name;
-				_dmg = dmg;
-				_type = type;
-				_accuracy = accuracy;
-				_MPCost = MPCost;
-			}
-		}
-		string _name;
-		//public readonly char mapSprite;
-		readonly public string[] CombatSprite;
-		public List<Attack> Attacks = new List<Attack>();
-		public StatBlock BaseStats;
-		Attack.DamageType[] Weakness;
-		readonly Random rand = new Random();
-		
-		public string Name
-		{
-			get { return _name; }
-		}
-		
 	
-		public Character(string name, string fileName, int lvl, int xp, int hp, int mp, int atk, int matk, int def, int mdef, int dex, int agi, Attack.DamageType[] weaknesses = null)
-		{
-			_name = name;
-			this.CombatSprite = File.ReadAllLines(System.Environment.CurrentDirectory + "\\..\\..\\Combat\\CombatSprites\\" + fileName);
-			BaseStats = new StatBlock(lvl, xp, hp, mp, atk, matk, def, mdef, dex, agi);
-			if (weaknesses != null)
-			{
-				this.Weakness = weaknesses;
-			}
-			else
-				this.Weakness = new Attack.DamageType[] { Attack.DamageType.none };
-			Attacks.Add(new Attack("Basic", 50, Attack.DamageType.Physical, 80));
-		}
-
-		public string DamageCalc(Attack attack, Character user, Character target)
-		{
-			// (attack^2) / (attack+defense)
-			int dmg;
-			string damageMessage;
-			//rand.Next(100)
-			user.BaseStats.CurrentMP -= attack.MPCost;
-			if(attack.Type == Attack.DamageType.Heal)
-			{
-				user.BaseStats.CurrentHP += attack.Dmg;
-				damageMessage = user.Name + " healed " + attack.Dmg + "hp";
-				return damageMessage;
-			}
-			if (rand.Next(100) <= (attack.Accuracy * ((float)user.BaseStats.Dex / target.BaseStats.Agi) ) )//See if hits
-			{	//attack hits
-				if (attack.Type == Attack.DamageType.Physical)
-				{
-					dmg = (int)((float)(attack.Dmg * user.BaseStats.Atk) / ((float)user.BaseStats.Atk + target.BaseStats.Def) / 2);
-					dmg = (dmg * rand.Next(80, 100)) / 100;
-				}
-				else
-				{
-					dmg = (attack.Dmg * user.BaseStats.MAtk) / (user.BaseStats.MAtk + target.BaseStats.MDef);
-				}
-				if(target.Weakness.Contains(attack.Type))
-				{
-					dmg = dmg * 2;
-				}
-				target.BaseStats.CurrentHP -= dmg;
-				damageMessage = attack.Name + " hit " + target.Name + " for " + Convert.ToString(dmg) + " damage";
-			}else //attack missed
-			{
-				damageMessage = attack.Name + " missed";
-			}
-
-
-			return damageMessage;
-		}
-		
-	}
-
-	public class Player : Character
-	{
-
-		/*public Player(string name) 
-		{
-			string Name = name;
-		}*/
-		public Inventory inventory = new Inventory();
-
-		public Player() : base("player", "Player.spr", 1, 0, 1000, 50, 50, 10, 10, 10, 10, 10)
-		{
-			
-			Attacks.Add(new Attack("Firebolt", 50, Attack.DamageType.Fire, 80, 10));
-			Attacks.Add(new Attack("Heal Opp", -100, Attack.DamageType.Ice, 100));
-			Attacks.Add(new Attack("Heal", 30, Attack.DamageType.Heal, 100, 10));
-			Attacks.Add(new Attack("Filler3", 0, Attack.DamageType.Physical, 100));
-			Attacks.Add(new Attack("Filler4", 0, Attack.DamageType.Physical, 100));
-			//Attacks.Add(new Attack("Filler5", 0, Attack.DamageType.Physical, 100));
-			//Attacks.Add(new Attack("Filler6", 0, Attack.DamageType.Physical, 100));
-			//Attacks.Add(new Attack("Filler7", 0, Attack.DamageType.Physical, 100));
-			//Attacks.Add(new Attack("Filler8", 0, Attack.DamageType.Physical, 100));
-			inventory.addItem(new Inventory.PotionHP(this));
-			inventory.addItem(new Inventory.Item("fItem1"));
-			inventory.addItem(new Inventory.Item("fItem2"));
-			inventory.addItem(new Inventory.Item("fItem3"));
-			inventory.addItem(new Inventory.Item("fItem4"));
-			//inventory.addItem(new Inventory.Item("fItem5"));
-		}
-
-		public class Inventory
-		{
-			public class Item
-			{
-				public string itemName;
-				public Item (string itemName = "NameMissing")
-				{
-					this.itemName = itemName;
-				}
-				virtual public string Use()
-				{
-					
-					return "Item Unimplemented";
-				}
-			}
-			public class PotionHP : Item
-			{
-				int healAmount = 50;
-				Player player;
-				//Attack heal
-				public PotionHP(Player player)
-				{
-					itemName = "HP Potion";
-					this.player = player;
-				}
-				
-				public override string Use()
-				{
-					int amountToHeal = player.BaseStats.HPMax - player.BaseStats.CurrentHP;
-					player.BaseStats.CurrentHP += healAmount;
-					return "Player healed " + amountToHeal + "HP";
-				}
-			}
-			public List<Item> items = new List<Item>();
-			public List<int> itemCount = new List<int>();
-			
-			public void addItem(Item item)
-			{
-				if(items.Any(x=>x.itemName == item.itemName))
-				{
-					itemCount[items.IndexOf(item)]++;
-				}else if(items.Count <= 100)
-				{
-					items.Add(item);
-					itemCount.Add(1);
-				}else {
-					//option to drop other items
-				}
-			}
-			public string useItem(Item item)
-			{
-				return item.Use();
-			}
-
-		}
-	}
-
+	
 
 	
 }

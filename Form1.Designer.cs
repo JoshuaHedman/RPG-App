@@ -35,20 +35,22 @@ namespace RPG_App
 			// OutputTxt
 			// 
 			this.OutputTxt.Font = new System.Drawing.Font("Consolas", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.OutputTxt.Location = new System.Drawing.Point(12, 12);
+			this.OutputTxt.Location = new System.Drawing.Point(14, 15);
+			this.OutputTxt.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
 			this.OutputTxt.Multiline = true;
 			this.OutputTxt.Name = "OutputTxt";
 			this.OutputTxt.ReadOnly = true;
-			this.OutputTxt.Size = new System.Drawing.Size(510, 500);
+			this.OutputTxt.Size = new System.Drawing.Size(573, 624);
 			this.OutputTxt.TabIndex = 2;
 			// 
 			// RPG_Form
 			// 
-			this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
+			this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(594, 553);
+			this.ClientSize = new System.Drawing.Size(599, 652);
 			this.Controls.Add(this.OutputTxt);
 			this.KeyPreview = true;
+			this.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
 			this.Name = "RPG_Form";
 			this.Text = "Form1";
 			this.Load += new System.EventHandler(this.RPG_Form_Load);

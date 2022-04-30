@@ -24,4 +24,4 @@
    ⌂      ≈≈   ϓ ϓϓϓ≈ϓ≈≈ϓ
            ≈    ϓϓϓϓϓϓ ≈ϓ
            ≈  ϓ ϓϓϓϓϓϓϓ≈ϓ
-Water,≈,≈,true;Mountain,Ʌ,Ʌ,true;MapChange,1,Bridge.map,⌂,false,ToCoord,3x5;MapChange,2,House.map,⌂,false,ToCoord,7x11
+Water,≈,≈,true;Mountain,Ʌ,Ʌ,true;MapChange,1,Bridge.map,⌂,false,ToCoord,3x5;MapChange,2,House.map,⌂,false,ToCoord,8x12
