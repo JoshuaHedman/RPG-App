@@ -13,6 +13,12 @@ namespace RPG_App.Map.Tiles
 		private bool _impassable = false;
 		//readonly item itemPassable;		thing to add later
 
+		public Tile(string sprite = "⚠", string impass = "f")
+		{
+			this.Sprite = Convert.ToChar(sprite);
+			this.Impassable = impass.Contains("f");
+		}
+
 		public char Sprite
 		{
 			get { return _sprite; }

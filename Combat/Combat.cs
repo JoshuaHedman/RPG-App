@@ -538,15 +538,15 @@ namespace RPG_App.Combat
 			{
 				string Item1 = "No items", Item2 = "", Item3 = "", Item4 = "";
 				if(player.inventory.items.Count >= 1 + itemMenuScroll * 2)
-				Item1 = player.inventory.items[itemMenuScroll * 2].itemName;
+				Item1 = player.inventory.items[itemMenuScroll * 2].itemName + "x" + player.inventory.itemCount[itemMenuScroll * 2];
 				if (player.inventory.items.Count>= 2 + itemMenuScroll * 2)
 				{
-					Item2 = player.inventory.items[1 + 2 * itemMenuScroll].itemName;
+					Item2 = player.inventory.items[1 + 2 * itemMenuScroll].itemName + "x" + player.inventory.itemCount[1 + itemMenuScroll * 2];
 					if (player.inventory.items.Count>= 3 + itemMenuScroll * 2)
 					{
-						Item3 = player.inventory.items[2 + 2 * itemMenuScroll].itemName;
+						Item3 = player.inventory.items[2 + 2 * itemMenuScroll].itemName + "x" + player.inventory.itemCount[2 + itemMenuScroll * 2];
 						if (player.inventory.items.Count >= 4 + itemMenuScroll * 2)
-							Item4 = player.inventory.items[3 + 2 * itemMenuScroll].itemName;
+							Item4 = player.inventory.items[3 + 2 * itemMenuScroll].itemName + "x" + player.inventory.itemCount[3 + itemMenuScroll * 2];
 					}
 				}
 				printedScreen += "| ___________________________ |\r\n";

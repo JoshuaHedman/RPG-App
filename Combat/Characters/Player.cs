@@ -22,10 +22,16 @@ namespace RPG_App.Combat.Characters
 			Attacks.Add(new Attack("Filler5", 0, Attack.DamageType.Physical, 100));
 			Attacks.Add(new Attack("Filler6", 0, Attack.DamageType.Physical, 100));
 			inventory.addItem(new Inventory.PotionHP(this));
+			inventory.addItem(new Inventory.PotionHP(this));
+			inventory.addItem(new Inventory.PotionHP(this));
+			inventory.addItem(new Inventory.PotionHP(this));
+			inventory.addItem(new Inventory.PotionHP(this));
 			inventory.addItem(new Inventory.PotionMP(this));
-			inventory.addItem(new Inventory.Item("fItem2"));
-			inventory.addItem(new Inventory.Item("fItem3"));
-			inventory.addItem(new Inventory.Item("fItem4"));
+			inventory.addItem(new Inventory.PotionMP(this));
+			inventory.addItem(new Inventory.PotionMP(this));
+			inventory.addItem(new Inventory.Item("Eat", true));
+			inventory.addItem(new Inventory.Item("NoEat"));
+			inventory.addItem(new Inventory.Item("Eat2", true));
 			//inventory.addItem(new Inventory.Item("fItem5"));
 		}
 
@@ -33,14 +39,25 @@ namespace RPG_App.Combat.Characters
 		{
 			public class Item
 			{
-				public string itemName;
-				public Item(string itemName = "NameMissing")
+				protected string _itemName;
+				protected bool _IsConsumable;
+				public string itemName
 				{
-					this.itemName = itemName;
+					get { return _itemName; }
+				}
+				public bool IsConsumable
+				{
+					get { return _IsConsumable; }
+				}
+
+				public Item(string itemName = "NameMissing", bool isConsumable = false)
+				{
+					this._itemName = itemName;
+					this._IsConsumable = isConsumable;
 				}
 				virtual public string Use()
 				{
-
+					
 					return "Item Unimplemented";
 				}
 			}
@@ -50,7 +67,8 @@ namespace RPG_App.Combat.Characters
 				Player player;
 				public PotionHP(Player player)
 				{
-					itemName = "HP Potion";
+					_itemName = "HP Pot";
+					_IsConsumable = true;
 					this.player = player;
 				}
 
@@ -67,7 +85,8 @@ namespace RPG_App.Combat.Characters
 				Player player;
 				public PotionMP(Player player)
 				{
-					itemName = "MP Potion";
+					_itemName = "MP Pot";
+					_IsConsumable = true;
 					this.player = player;
 				}
 
@@ -85,9 +104,10 @@ namespace RPG_App.Combat.Characters
 			{
 				if (items.Any(x => x.itemName == item.itemName))
 				{
-					itemCount[items.IndexOf(item)]++;
+					int i = items.IndexOf(items.Where(p => p.itemName == item.itemName).FirstOrDefault());
+					itemCount[i]++;
 				}
-				else if (items.Count <= 100)
+				else if (items.Count < 99)
 				{
 					items.Add(item);
 					itemCount.Add(1);
@@ -99,7 +119,18 @@ namespace RPG_App.Combat.Characters
 			}
 			public string useItem(Item item)
 			{
-				return item.Use();
+				string msg = item.Use();
+				if (item.IsConsumable == true)
+				{
+					int i = items.IndexOf(item);
+					itemCount[i]--;
+					if (itemCount[i] == 0)
+					{
+						itemCount.RemoveAt(i);
+						items.Remove(item);
+					}
+				}
+				return msg;
 			}
 
 		}

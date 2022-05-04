@@ -105,7 +105,7 @@ namespace RPG_App.Combat.Characters
 		public Character(string name, string fileName, int lvl, int xp, int hp, int mp, int atk, int matk, int def, int mdef, int dex, int agi, Attack.DamageType[] weaknesses = null)
 		{
 			_name = name;
-			this.CombatSprite = File.ReadAllLines(System.Environment.CurrentDirectory + "\\..\\..\\Combat\\CombatSprites\\" + fileName);
+			this.CombatSprite = File.ReadAllLines(Environment.CurrentDirectory + "\\..\\..\\Combat\\CombatSprites\\" + fileName);
 			BaseStats = new StatBlock(lvl, xp, hp, mp, atk, matk, def, mdef, dex, agi);
 			if (weaknesses != null)
 			{

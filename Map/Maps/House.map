@@ -8,8 +8,8 @@
    |       |  
    |  ___  |  
    |  | |  |  
-   |__|1|__|  
+sss|__|1|__|ss
               
               
 vvvvvvvvvvvvvv
-MapChange,v,OverWorld.map, ,false,SameTile;MapChange,1,OverWorld.map, ,false,SameTile
+MapChange,v,OverWorld.map, ,false,SameTile;MapChange,1,OverWorld.map, ,false,SameTile;Water,s, ,true;Water,_,_,true;Water,|,|,true;
